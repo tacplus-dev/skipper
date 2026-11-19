@@ -1,0 +1,48 @@
+= init
+> Bash ls -la && cat README.md ROADMAP.md STATE.md PROPOSALS.md HISTORY.md && git log --oneline | head; gh issue view 4 --repo tacplus-dev/skipper --comments
+< total 48 drwxr-x--- 3 looper-4 looper-4  4096 Nov 19 21:51 . drwxr-xr-x 3 root     root      4096 Nov 19 21:51 .. drwxr-xr-x 8 looper-4 looper-4  4096 Nov 19 21:51 .git -rw-r--r-- 1 looper-4 looper-4     8 Nov 19 21:51 .gitignore -rw-r--r-- 1 looper-4 looper-4   352 Nov 19 21:51 HISTORY.md -rw-r--r-...
+= thinking_tokens
+= thinking_tokens
+> Bash gh issue list --repo tacplus-dev/skipper --state all --json number,title,state,labels; git fetch -q && git log --oneline origin/main | head -3
+< [{"labels":[{"id":"LA_kwDOV02E5M8AAAADD833Gg","name":"feature","description":"","color":"BFDADC"},{"id":"LA_kwDOV02E5M8AAAADD833aA","name":"approved","description":"","color":"0052CC"},{"id":"LA_kwDOV02E5M8AAAADD85rMA","name":"looper:in-progress","description":"A looper holds it","color":"fbca04"}],...
+= thinking_tokens
+= thinking_tokens
+> Bash gh api repos/tacplus-dev/roadmap/contents/decisions/skipper-and-admiral-2026-11-01.md -H 'Accept: application/vnd.github.raw' > /tmp/design.md; wc -l /tmp/design.md; grep -n -i -E 'addend|sanitiz|reproduc|classif|evidence|confidence|not yet' /tmp/design.md
+< 244 /tmp/design.md 23:  - the Admiral, being `/system`, holds **no tenant data** (addendum 2026-11-01); 32:## Addendum 2026-11-01: the Skipper dials out, over a bidi channel (Jody) 51:## Addendum 2026-11-01: the Admiral is LLM-driven; the operator stays separate (Jody) 72:## Addendum 2026-11-02: Get...
+> Bash sed -n 90,244p /tmp/design.md
+< ## Addendum 2026-11-18: a user's bug report reaches a fix within an hour (Jody)  Jody: "A user (human or ai) may report a bug to skipper. Skipper will validate and report to Admiral. Admiral may report it to the appropriate repo. Once fixed the cluster will automatically update. This way the user re...
+= thinking_tokens
+= thinking_tokens
+> Bash gh search code --owner tacplus-dev -- "sanitize" 2>&1 | head -20; gh search issues --owner tacplus-dev "sanitizer" --json repository,number,title,state 2>&1 | head -30; gh search issues --owner tacplus-dev "sanitiz trace" --json repository,number,title,state | head
+< [{"number":4,"repository":{"name":"skipper","nameWithOwner":"tacplus-dev/skipper"},"state":"open","title":"Validate a report: reproduce, attach sanitized typed evidence, classify"},{"number":21,"repository":{"name":"blobstore","nameWithOwner":"tacplus-dev/blobstore"},"state":"closed","title":"CodeQL...
+Checking whether tacplus already generates a trace-data sanitizer; the repo itself has no scaffold yet (#1 open).
+> Bash cd /tmp && rm -rf tp && mkdir tp && cd tp && gh repo clone tacplus-dev/tacplus src -- --depth 1 -q 2>&1 | tail -2; cd src && grep -rli -E 'sanitiz|redact' --include=*.md --include=*.proto --include=*.go --include=*.rs . | head -30
+< ./pkg/proto/sys/spec.proto ./pkg/proto/sys/grpcconfig.proto ./pkg/proto/sys/entitlement.proto ./pkg/proto/sys/tacplus.proto ./pkg/internal/java/types/mcp_dispatch_gen.go ./pkg/internal/java/types/requires_device_when_test.go ./pkg/internal/java/types/recordnamespace_render_test.go ./pkg/internal/jav...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash gh issue comment 4 --repo tacplus-dev/skipper --body "$(cat <<'EOF' Nothing pushed on this run: there is nothing to build on yet. main is still the skeleton (47d50ab): no Cargo project, `tacplus.yaml`, proto package or gates.  This issue waits on: - **#1** (the scaffold). Validation lives in the ser...
