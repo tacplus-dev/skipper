@@ -1,0 +1,12 @@
+kind: service
+# The compiler line this repository builds with: tacplus's current line, 2.6. tacplus.lock pins its exact
+# release and build image by digest (`tacplus pin` moves it, in a commit; a build never does).
+tacplus: "2.6"
+language: rust
+# Rust takes only pkg's last segment: the crate is skipper-model (Cargo.toml).
+pkg: com.github.tacplusdev.skipper
+output-dir: target/generated-sources
+src: proto
+header: |
+  Copyright (c) 2026 Jody Scott
+  SPDX-License-Identifier: Apache-2.0

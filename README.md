@@ -12,3 +12,20 @@ A tenant's own platform agent in tacplus: one per tenant, in the tenant's namesp
   and works with no model at all) and an LLM advisor whose tools are read-only plus "propose".
 
 Design: tacplus-dev/roadmap `decisions/skipper-and-admiral-2026-11-01.md`. Rust. Apache-2.0.
+
+## Building
+
+Skipper is a tacplus Rust service (`tacplus.yaml`): the proto package `skipper` (`proto/services/skipper.proto`)
+declares it `tenant_owned`, so the generated door refuses every caller outside its instance's tenant. The
+compiler line is tacplus 2.6; `tacplus.lock` pins its exact release and build image by digest (`tacplus pin`
+moves it, in a commit). Generated code (`target/generated-sources`) is never committed.
+
+```bash
+just gates      # tacplus build, then cargo build --locked and cargo test --locked
+```
+
+The build pipeline runs the gates, then its security checks; their cargo-deny reads `deny.toml` (looper-scan's
+default policy, plus the license of each crate tacplus generates: tacplus-dev/tacplus#368).
+
+Its service id comes from the global registry (tacplus-dev/registry); `tacplus registry --proto-dir proto`
+syncs the lock `proto/registry.yaml`.

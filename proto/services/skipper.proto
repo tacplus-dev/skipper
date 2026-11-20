@@ -1,0 +1,25 @@
+// Copyright (c) 2026 Jody Scott
+// SPDX-License-Identifier: Apache-2.0
+
+syntax = "proto3";
+
+package skipper;
+
+import "sys/spec.proto";
+
+// ---------------------------------------------------------------------------
+// skipper: a tenant's own platform agent (tacplus-dev/roadmap
+// decisions/skipper-and-admiral-2026-11-01.md). Tenant-owned: one instance per
+// tenant, in that tenant's namespace (/tenants/<name>), with no privilege in
+// /system. The generated door refuses every caller outside its tenant.
+//
+// The service is empty for now: the ticket API (#2), the stream to the
+// Admiral (#3) and the rest come in their own issues. Every rpc added here
+// declares its route_field (the target tenant's tid), as a tenant-owned
+// service must.
+// ---------------------------------------------------------------------------
+option (spec.service) = {name: "skipper", tenant_owned: true};
+
+message Config {
+  option (spec.grpc_config) = {service_name: "skipper"};
+}

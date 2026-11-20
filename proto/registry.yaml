@@ -1,0 +1,8 @@
+# Managed by tacplus — do not edit IDs manually.
+registries:
+    - https://github.com/tacplus-dev/registry.git
+services:
+    - name: skipper
+      id: 110
+      contract: https://github.com/tacplus-dev/skipper.git
+      visibility: public
