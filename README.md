@@ -31,6 +31,28 @@ ticket is its reporter's alone: anyone else gets `NOT_FOUND`. A ticket moves for
 a signal from the report's validation (#4) or the Admiral (#3): the Skipper never says "everything is fine" on its
 own judgment. `CreateTicket` and `GetTicket` are MCP tools too (tacplus publishes every unary user rpc).
 
+## The stream to the Admiral
+
+The Skipper dials out to its Admiral (tenant to `/system`, the allowed direction) and holds one stream,
+`admiral.Admiral/BrokerSkipperChannel`, on the Admiral's declared API (tacplus-dev/admiral#3, `depends: [admiral]`).
+The Admiral never dials in: it reaches the Skipper only on this stream. `src/core/admiral.rs` is the Skipper's side:
+
+- **Opening:** each (re)opened stream starts with a `SkipperHello` naming every report the Skipper still follows and
+  the last update it holds of it, then every report revision the Admiral has not accepted yet. A report the Admiral's
+  hello says it does not know is sent again.
+- **Updates** move the report's ticket: `FILED`, `FIX_LANDED`, `FIX_DEPLOYED` and `CLOSED` become the ticket's
+  states, each update once however often it is replayed, forward only. Triage, grouping and the release move only the
+  cursor (the ticket has no state for them).
+- **Requests** are the Admiral's asking; the Skipper decides. It answers only for reports it sent, and declines the
+  tenant config read (until assisted configuration, #6) and a re-run reproduction (until validation, #4), saying why.
+- **Ends:** the generated client reconnects after any end (every 5s). A shutdown ends the stream with `last`. On a
+  tacplus with make-before-break rotation (tacplus-dev/tacplus#322, after 2.6.13) the generated client carries the
+  stream across tokens itself; on 2.6.13 the Admiral's server ends it at the token's `exp` and the client reconnects,
+  resuming from the cursors.
+
+Each message carries the trace of what caused it: an answer the Admiral request's `trace_id`, a report the trace of
+the work that sent it, on every stream it is sent on.
+
 ## Building
 
 Skipper is a tacplus Rust service (`tacplus.yaml`): the proto package `skipper` (`proto/services/skipper.proto`)

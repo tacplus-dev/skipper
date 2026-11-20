@@ -62,3 +62,24 @@ Loopers propose here; Jody decides, and an accepted proposal becomes a ROADMAP l
   a reporter only for its own tickets. Moving the desk into the core and giving the reads the asking reporter, so the
   advisor reads no ticket its asker could not, is the first step of telling a ticket's updates in its reporter's
   language (above, from #2), the first rpc that asks the advisor.
+
+## From #3 (the stream to the Admiral), 2026-11-20
+
+- **Pin tacplus 2.7 for make-before-break rotation.** The stream's rotation (tacplus-dev/tacplus#259, its Rust part
+  #322) is on tacplus main, in no release yet: 2.6.13, the pin, has the plain bidi client, so the Admiral's server ends
+  the stream at each token's `exp` and the Skipper reconnects and resumes from its cursors. Rotation is the generated
+  client's, so the Skipper's code does not change: `tacplus pin` to the first 2.7 release, here and in
+  tacplus-dev/admiral (both sides must serve the `AdmiralRotating` sibling), then check on a deploy that the stream
+  outlives a token.
+- **Reconnect with growing backoff and jitter.** The generated bidi client (tacplus 2.6.13 `grpcclient_bidi.rs.tmpl`)
+  retries every 5s, fixed; the design says "reconnects with backoff". Every Skipper of a deployment redialling an
+  Admiral that is down, every 5s at once, is the herd that backoff avoids. It is the generator's (a tacplus feature),
+  not code to write around here.
+- **Ticket history for the stages with no ticket state.** `TRIAGED`, `GROUPED`, `ESCALATED` and `FIX_RELEASED` move
+  only the stream's cursor: the desk moves a ticket only to a new state, so the reporter hears nothing of them. A
+  ticket event that records a step without a state change (or states for them) would keep the reporter updated on
+  every step, as the 2026-11-18 addendum asks.
+- **The stream's state is in memory.** The reports sent, their acceptance and the update cursors are lost on a restart,
+  as the tickets are: with a durable ticket store (from #2, above) they belong in the same record.
+- **The Admiral's requests answered for real**: the tenant's redacted config once assisted configuration reads it
+  (#6), a re-run reproduction once validation runs one (#4). Until then `AdmiralChannel::decide` declines both.
