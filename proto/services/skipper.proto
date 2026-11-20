@@ -13,13 +13,146 @@ import "sys/spec.proto";
 // tenant, in that tenant's namespace (/tenants/<name>), with no privilege in
 // /system. The generated door refuses every caller outside its tenant.
 //
-// The service is empty for now: the ticket API (#2), the stream to the
-// Admiral (#3) and the rest come in their own issues. Every rpc added here
-// declares its route_field (the target tenant's tid), as a tenant-owned
-// service must.
+// The ticket API (#2) is here; the stream to the Admiral (#3) and the rest come
+// in their own issues. Every rpc declares its route_field (the target tenant's
+// tid), as a tenant-owned service must.
 // ---------------------------------------------------------------------------
 option (spec.service) = {name: "skipper", tenant_owned: true};
 
 message Config {
   option (spec.grpc_config) = {service_name: "skipper"};
+
+  // reports_per_hour is how many tickets one reporter may open in an hour (a
+  // token bucket that refills evenly over the hour). The report path is a
+  // prompt-injection path (the 2026-11-19 addenda), so it is bounded per
+  // reporter, not per tenant: one noisy user or agent cannot crowd out the rest.
+  int32 reports_per_hour = 1 [(spec.default_int) = 10, (spec.assert_ge) = 1, (spec.assert_le) = 1000];
+}
+
+// ---------------------------------------------------------------------------
+// Tickets: the tenant's users and agents report a problem to their Skipper and
+// follow it (decisions/skipper-and-admiral-2026-11-01.md, 2026-11-18 and
+// 2026-11-19 addenda).
+//
+// - Any authenticated user or agent of the tenant may report, through the
+//   gateway with the tenant's normal sign-in; there are no anonymous reports.
+//   The reporter is the verified caller, never a value the request chose
+//   (`reporter` is (spec.principal)).
+// - Every report is acknowledged with a ticket, and the ticket is kept, and its
+//   reporter kept updated, until the fix reaches the reporter's deployment.
+// - A ticket's state moves only forward, and only on a signal: the validation
+//   of the report (#4) or the Admiral, over the Skipper's stream (#3). The
+//   Skipper never tells a reporter "everything is fine" on its own judgment:
+//   there is no such state.
+// ---------------------------------------------------------------------------
+
+// TicketState is where a ticket is on its way from the report to the fix in
+// the reporter's deployment. The values are in the order a ticket moves
+// through them; it never moves back.
+enum TicketState {
+  TICKET_STATE_UNSPECIFIED = 0;
+  // The Skipper has the report and has acknowledged it.
+  TICKET_STATE_RECEIVED = 1;
+  // The Skipper is reproducing the report against the tenant's own services.
+  TICKET_STATE_VALIDATING = 2;
+  // The Skipper could not reproduce it yet. The report is still filed, with
+  // what was tried and seen: a report is never dropped for this.
+  TICKET_STATE_NOT_YET_REPRODUCED = 3;
+  // The Skipper reproduced it.
+  TICKET_STATE_REPRODUCED = 4;
+  // The Admiral filed it in the repository that owns the cause.
+  TICKET_STATE_FILED = 5;
+  // The fix landed in that repository.
+  TICKET_STATE_FIX_LANDED = 6;
+  // The fix reached the reporter's deployment. The ticket's last update.
+  TICKET_STATE_FIX_DEPLOYED = 7;
+  // The ticket was closed without a fix reaching the deployment (a duplicate,
+  // say), by the Admiral's signal.
+  TICKET_STATE_CLOSED = 8;
+}
+
+// TicketEvent is one step of a ticket: the state it entered, when, and what
+// the signal that moved it said.
+message TicketEvent {
+  TicketState state = 1;
+  int64 at_ms = 2;
+  string detail = 3 [(spec.assert_max_size) = 4096];
+}
+
+// Ticket is a report as its reporter follows it.
+message Ticket {
+  string ticket_id = 1 [(spec.assert_max_size) = 64];
+  TicketState state = 2;
+  // summary is the report's own summary, as the reporter wrote it.
+  string summary = 3 [(spec.assert_max_size) = 512];
+  int64 received_at_ms = 4;
+  int64 updated_at_ms = 5;
+  // history is every state the ticket has entered, oldest first: RECEIVED,
+  // then each signal's.
+  repeated TicketEvent history = 6 [(spec.assert_max_size) = 64];
+}
+
+service Tickets {
+  option (spec.service_c2s) = {auth_entitled_users: true};
+
+  // CreateTicket reports a problem to your tenant's Skipper. It is acknowledged
+  // with a ticket you can follow with GetTicket and SubscribeTicket.
+  rpc CreateTicket(CreateTicketRequest) returns (CreateTicketResponse) {
+    option (spec.rpc) = {principal: RPC_PRINCIPAL_USER, exposure: RPC_EXPOSURE_EXTERNAL, route_field: "tenant",
+                         flags: [RPC_FLAG_AUTH_ANY_USER]};
+  }
+
+  // GetTicket returns the state of one of your tickets.
+  rpc GetTicket(GetTicketRequest) returns (Ticket) {
+    option (spec.rpc) = {principal: RPC_PRINCIPAL_USER, exposure: RPC_EXPOSURE_EXTERNAL, route_field: "tenant",
+                         flags: [RPC_FLAG_AUTH_ANY_USER]};
+  }
+
+  // SubscribeTicket streams one of your tickets: its current state, then each
+  // change, until the fix reaches your deployment or the ticket is closed.
+  rpc SubscribeTicket(SubscribeTicketRequest) returns (stream Ticket) {
+    option (spec.rpc) = {principal: RPC_PRINCIPAL_USER, exposure: RPC_EXPOSURE_EXTERNAL, route_field: "tenant",
+                         flags: [RPC_FLAG_AUTH_ANY_USER]};
+  }
+}
+
+message CreateTicketRequest {
+  // tenant is the target tenant's tid: the tenant whose Skipper takes the report.
+  string tenant = 1 [(spec.assert_max_size) = 8];
+  // reporter is (spec.principal): the generated wrapper stamps the verified
+  // caller's subject when it is empty and refuses one that differs, so a report
+  // is always the caller's own.
+  string reporter = 2 [(spec.principal) = true, (spec.assert_max_size) = 512];
+  // summary says what went wrong, in a line.
+  string summary = 3 [(spec.assert_required) = true, (spec.assert_max_size) = 512];
+  // details is what the reporter did, saw and expected.
+  string details = 4 [(spec.assert_max_size) = 16384];
+  // service names the service that misbehaved, when the reporter knows it.
+  string service = 5 [(spec.assert_max_size) = 128];
+  // client_request_id makes a retry safe: the same reporter sending the same
+  // client_request_id again gets the ticket of the first report, not a second.
+  string client_request_id = 6 [(spec.assert_max_size) = 128];
+}
+
+message CreateTicketResponse {
+  Ticket ticket = 1;
+  // acknowledgement tells the reporter what happens next.
+  string acknowledgement = 2 [(spec.assert_max_size) = 1024];
+}
+
+message GetTicketRequest {
+  // tenant is the target tenant's tid.
+  string tenant = 1 [(spec.assert_max_size) = 8];
+  // reporter is (spec.principal), as on CreateTicketRequest: a caller sees
+  // only the tickets it reported.
+  string reporter = 2 [(spec.principal) = true, (spec.assert_max_size) = 512];
+  string ticket_id = 3 [(spec.assert_required) = true, (spec.assert_max_size) = 64];
+}
+
+message SubscribeTicketRequest {
+  // tenant is the target tenant's tid.
+  string tenant = 1 [(spec.assert_max_size) = 8];
+  // reporter is (spec.principal), as on CreateTicketRequest.
+  string reporter = 2 [(spec.principal) = true, (spec.assert_max_size) = 512];
+  string ticket_id = 3 [(spec.assert_required) = true, (spec.assert_max_size) = 64];
 }

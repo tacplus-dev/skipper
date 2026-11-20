@@ -1,6 +1,9 @@
 mod service;
 #[cfg(test)]
 mod service_tests;
+mod tickets;
+#[cfg(test)]
+mod tickets_tests;
 
 use std::error::Error;
 use std::sync::Arc;

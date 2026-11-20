@@ -7,10 +7,24 @@ license = "Apache-2.0"
 [dependencies]
 skipper-model = { path = "target/generated-sources/model" }
 logger = { path = "target/generated-sources/model/chassis/logger" }
+# The generated handler traits take the verified caller (servicemanager::auth::Caller) and answer tonic::Status.
+servicemanager = { path = "target/generated-sources/model/chassis/servicemanager" }
+tonic = "0.14"
 tokio = { version = "1", features = ["full"] }
+# SubscribeTicket's stream (src/service.rs).
+futures = "0.3"
+# Ticket ids. The generated chassis's line, so the same crate.
+rand = "0.8"
 tracing = "0.1"
 async-trait = "0.1"
 
 [dev-dependencies]
 # Reads the generated registry.json (src/service_tests.rs).
 serde_json = "1"
+# src/service_tests.rs drives the generated wrapper behind the generated Authorizer, with signed fixture tokens,
+# as tacplus's own cross-test does: the same path crates, and the base64 line the chassis uses.
+token = { path = "target/generated-sources/model/chassis/token" }
+key = { path = "target/generated-sources/model/chassis/key" }
+jwk = { path = "target/generated-sources/model/chassis/jwk" }
+grpcserver = { path = "target/generated-sources/model/chassis/grpcserver" }
+base64 = "0.21"
