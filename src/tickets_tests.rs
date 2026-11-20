@@ -178,8 +178,8 @@ fn the_admirals_updates_move_the_ticket() {
     };
     channel.receive(update(1, Stage::Filed), T0 + 1);
     channel.receive(update(2, Stage::FixDeployed), T0 + 2);
-    // Closed after the fix reached the deployment would move it back: the desk refuses, and the ticket stays.
-    channel.receive(update(3, Stage::Closed), T0 + 3);
+    // A fix landing after it reached the deployment would move the ticket back: the desk refuses, and it stays.
+    channel.receive(update(3, Stage::FixLanded), T0 + 3);
     let ticket = desk.get(ALICE, &id).unwrap();
     assert_eq!(ticket.state(), TicketState::FixDeployed);
     let states: Vec<TicketState> = ticket.history.iter().map(|e| e.state()).collect();
