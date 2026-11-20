@@ -17,10 +17,11 @@ futures = "0.3"
 rand = "0.8"
 tracing = "0.1"
 async-trait = "0.1"
+# The advisor's tool inputs and the typed proposals it returns (src/advisor, src/core/proposal.rs).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
 
 [dev-dependencies]
-# Reads the generated registry.json (src/service_tests.rs).
-serde_json = "1"
 # src/service_tests.rs drives the generated wrapper behind the generated Authorizer, with signed fixture tokens,
 # as tacplus's own cross-test does: the same path crates, and the base64 line the chassis uses.
 token = { path = "target/generated-sources/model/chassis/token" }

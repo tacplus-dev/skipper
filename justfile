@@ -30,8 +30,15 @@ build: generate
 test: build
   cargo test --locked
 
+# The LLM rule (#5): an LLM may propose; it never holds a token or a write path. The gate's fixture test first, then
+# the gate on src/: it fails if the advisor's side (src/advisor/, src/core/reads.rs, src/core/proposal.rs) could
+# reach a state client, a token or any write path.
+llm-rule:
+  scripts/llm-rule-gate-test.sh
+  scripts/llm-rule-gate.sh src
+
 # The gates every change passes before it lands.
-gates: test
+gates: llm-rule test
 
 clean:
   rm -rf target

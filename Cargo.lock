@@ -2411,6 +2411,7 @@ dependencies = [
  "key",
  "logger",
  "rand 0.8.8",
+ "serde",
  "serde_json",
  "servicemanager",
  "skipper-model",

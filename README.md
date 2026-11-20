@@ -39,8 +39,16 @@ compiler line is tacplus 2.6; `tacplus.lock` pins its exact release and build im
 moves it, in a commit). Generated code (`target/generated-sources`) is never committed.
 
 ```bash
-just gates      # tacplus build, then cargo build --locked and cargo test --locked
+just gates      # the LLM-rule gate, then tacplus build, cargo build --locked and cargo test --locked
 ```
+
+**The LLM rule** (#5): `src/core/` is the deterministic core, the only part that may hold a client, a token or a write
+path; `src/advisor/` is the LLM advisor, whose model is reached only through llmproxy (`depends: [llmproxy]`, by
+default the alias `claude-opus-latest`) and whose tools are three reads plus `propose`, which returns a typed
+`Proposal` the core validates again. `just llm-rule` (in `just gates`) runs `scripts/llm-rule-gate.sh`, which fails
+the build if the advisor's side (`src/advisor/`, `src/core/reads.rs`, `src/core/proposal.rs`) names the generated
+model, a chassis crate, a token or client type, a crate path beyond the read trait and the proposals, or a way out
+of the process (`std::fs`, `std::net`, ...); its fixture test `scripts/llm-rule-gate-test.sh` runs first.
 
 The build pipeline runs the gates, then its security checks; their cargo-deny reads `deny.toml` (looper-scan's
 default policy, plus the license of each crate tacplus generates: tacplus-dev/tacplus#368).

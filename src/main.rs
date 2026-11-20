@@ -8,6 +8,8 @@ mod tickets_tests;
 use std::error::Error;
 use std::sync::Arc;
 
+use skipper::core::llmproxy::LlmProxyModel;
+use skipper::core::Core;
 use skipper_model::s2sm::ServiceManager;
 
 #[tokio::main]
@@ -35,5 +37,8 @@ async fn run() -> Result<(), Box<dyn Error>> {
     // service has its identity (in its tenant's namespace) and config; sm.run() serves the generated
     // surface, behind the generated door that refuses callers outside this instance's tenant, until shutdown.
     let sm = Arc::new(ServiceManager::new().await?);
-    sm.run(Arc::new(service::SkipperHandler::new())).await
+    // The core holds the ServiceManager, and with it every client and token; its advisor reaches the model through
+    // llmproxy (by default Opus) and gets nothing else (src/advisor, scripts/llm-rule-gate.sh).
+    let core = Arc::new(Core::with_model(Arc::new(LlmProxyModel::new(sm.clone()))));
+    sm.run(Arc::new(service::SkipperHandler::new(core))).await
 }

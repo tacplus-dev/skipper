@@ -6,6 +6,9 @@ language: rust
 # Rust takes only pkg's last segment: the crate is skipper-model (Cargo.toml).
 pkg: com.github.tacplusdev.skipper
 output-dir: target/generated-sources
+# The advisor reaches its model only through llmproxy, over S2S (#5); its contract comes through the registry.
+depends:
+  - llmproxy
 src: proto
 header: |
   Copyright (c) 2026 Jody Scott

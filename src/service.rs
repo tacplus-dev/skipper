@@ -14,6 +14,8 @@ use skipper_model::types::services::skipper::{
 use tokio::sync::watch;
 use tonic::Status;
 
+use skipper::core::Core;
+
 use crate::tickets::{self, DeskError, Report, TicketDesk};
 
 type TicketStream = Pin<Box<dyn futures::Stream<Item = Result<Ticket, Status>> + Send>>;
@@ -113,22 +115,21 @@ impl TicketsHandler for TicketsService {
     }
 }
 
-/// The lifecycle handler the ServiceManager runs. It holds the ticket desk: no token and no client.
+/// The lifecycle handler the ServiceManager runs. It holds the ticket desk and the deterministic core, which holds
+/// every client and token and the advisor.
 pub struct SkipperHandler {
     desk: Arc<TicketDesk>,
     tickets: Arc<TicketsService>,
-}
-
-impl Default for SkipperHandler {
-    fn default() -> Self {
-        Self::new()
-    }
+    // Read once the advisor tells a ticket's updates to its reporter (PROPOSALS.md) and by assisted configuration
+    // (#6); no rpc reads it yet.
+    #[allow(dead_code)]
+    core: Arc<Core>,
 }
 
 impl SkipperHandler {
-    pub fn new() -> Self {
+    pub fn new(core: Arc<Core>) -> Self {
         let desk = Arc::new(TicketDesk::default());
-        SkipperHandler { tickets: Arc::new(TicketsService::new(desk.clone())), desk }
+        SkipperHandler { tickets: Arc::new(TicketsService::new(desk.clone())), desk, core }
     }
 }
 

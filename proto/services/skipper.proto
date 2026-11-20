@@ -19,6 +19,10 @@ import "sys/spec.proto";
 // ---------------------------------------------------------------------------
 option (spec.service) = {name: "skipper", tenant_owned: true};
 
+// The advisor's model, through llmproxy (#5): the core holds this client and
+// gives the advisor only completions through it (src/core/llmproxy.rs).
+option (spec.grpc_s2s_client) = {service: "llmproxy.LlmProxy"};
+
 message Config {
   option (spec.grpc_config) = {service_name: "skipper"};
 

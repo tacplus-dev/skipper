@@ -17,8 +17,15 @@ use skipper_model::types::services::skipper::{
 use skipper_model::types::sys::healthreport::healthreport::InstanceStatus;
 use tonic::{Code, Status};
 
+use skipper::core::Core;
+
 use crate::service::{SkipperHandler, TicketsService};
 use crate::tickets::TicketDesk;
+
+// The handler with a core that has no model: the service runs without one.
+fn handler() -> SkipperHandler {
+    SkipperHandler::new(Arc::new(Core::without_model()))
+}
 
 // The generated registry of this build: what tacplus made of proto/.
 const REGISTRY: &str = include_str!("../target/generated-sources/model/registry.json");
@@ -56,14 +63,14 @@ fn skipper_is_tenant_owned() {
 
 #[test]
 fn handler_is_healthy_and_serves_nothing_extra() {
-    let handler = SkipperHandler::new();
+    let handler = handler();
     assert!(matches!(handler.check_health(), InstanceStatus::Healthy));
     assert!(handler.additional_services().is_none());
 }
 
 #[tokio::test]
 async fn shutdown_returns() {
-    let handler: Arc<dyn Handler> = Arc::new(SkipperHandler::new());
+    let handler: Arc<dyn Handler> = Arc::new(handler());
     handler.shutdown().await;
 }
 
