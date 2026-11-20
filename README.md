@@ -13,6 +13,24 @@ A tenant's own platform agent in tacplus: one per tenant, in the tenant's namesp
 
 Design: tacplus-dev/roadmap `decisions/skipper-and-admiral-2026-11-01.md`. Rust. Apache-2.0.
 
+## The ticket API
+
+`skipper.Tickets` (`proto/services/skipper.proto`), through the gateway with the tenant's normal sign-in. Any
+authenticated user or agent of the tenant may call it; there are no anonymous reports, and every rpc names the
+target tenant's tid in `tenant`.
+
+| Rpc | What it does |
+|-----|--------------|
+| `CreateTicket` | Report a problem: acknowledged at once with a ticket in `RECEIVED`. A retry with the same `client_request_id` gets the same ticket. Rate-limited per reporter (`Config.reports_per_hour`, 10 by default): `RESOURCE_EXHAUSTED` past it. |
+| `GetTicket` | The ticket's state and its history. |
+| `SubscribeTicket` | The ticket's current state, then each change, until the fix reaches the reporter's deployment (`FIX_DEPLOYED`) or the ticket is closed. |
+
+The reporter is the verified caller (`reporter` is `(spec.principal)`, stamped by the generated wrapper), and a
+ticket is its reporter's alone: anyone else gets `NOT_FOUND`. A ticket moves forward only (`RECEIVED`,
+`VALIDATING`, `NOT_YET_REPRODUCED`, `REPRODUCED`, `FILED`, `FIX_LANDED`, `FIX_DEPLOYED`, or `CLOSED`), and only on
+a signal from the report's validation (#4) or the Admiral (#3): the Skipper never says "everything is fine" on its
+own judgment. `CreateTicket` and `GetTicket` are MCP tools too (tacplus publishes every unary user rpc).
+
 ## Building
 
 Skipper is a tacplus Rust service (`tacplus.yaml`): the proto package `skipper` (`proto/services/skipper.proto`)
