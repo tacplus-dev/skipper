@@ -8,6 +8,7 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
+use skipper::core::admiral::TicketSignals;
 use skipper_model::types::services::skipper::{Ticket, TicketEvent, TicketState};
 use tokio::sync::watch;
 
@@ -178,7 +179,6 @@ impl TicketDesk {
     /// Moves the ticket `ticket_id` to `to` on a signal, saying `detail`, and tells its subscribers. Only the
     /// report's validation (#4) and the Admiral's signals (#3) call it: a ticket never moves on the Skipper's own
     /// judgment. It moves forward only (TicketState's order), and never back to RECEIVED or to no state.
-    #[cfg_attr(not(test), allow(dead_code))]
     pub fn advance(&self, ticket_id: &str, to: TicketState, detail: &str, now_ms: i64) -> Result<Ticket, DeskError> {
         let desk = self.desk.lock().unwrap();
         let entry = desk.tickets.get(ticket_id).ok_or(DeskError::NotFound)?;
@@ -192,6 +192,13 @@ impl TicketDesk {
             t.history.push(TicketEvent { state: to as i32, at_ms: now_ms, detail: detail.to_string(), ..Default::default() });
         });
         Ok(entry.ticket())
+    }
+}
+
+/// The Admiral's signals, from its updates on the Skipper's stream (#3, src/core/admiral.rs).
+impl TicketSignals for TicketDesk {
+    fn signal(&self, ticket_id: &str, to: TicketState, detail: &str, now_ms: i64) -> Result<(), String> {
+        self.advance(ticket_id, to, detail, now_ms).map(|_| ()).map_err(|e| format!("{e:?}"))
     }
 }
 

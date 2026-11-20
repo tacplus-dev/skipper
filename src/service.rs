@@ -1,6 +1,7 @@
 //! The Skipper service. The ServiceManager serves what tacplus generates from proto/services/skipper.proto: the
 //! ticket API (#2) behind the generated door, which refuses every caller outside this instance's tenant, and its
-//! config watch. The stream to the Admiral (#3) comes in its own issue.
+//! config watch. The handler also holds the Skipper's side of its stream to the Admiral (#3), which main.rs connects
+//! and the shutdown ends with a goodbye.
 
 use std::pin::Pin;
 use std::sync::Arc;
@@ -14,6 +15,7 @@ use skipper_model::types::services::skipper::{
 use tokio::sync::watch;
 use tonic::Status;
 
+use skipper::core::admiral::{AdmiralChannel, Outbox};
 use skipper::core::Core;
 
 use crate::tickets::{self, DeskError, Report, TicketDesk};
@@ -115,11 +117,13 @@ impl TicketsHandler for TicketsService {
     }
 }
 
-/// The lifecycle handler the ServiceManager runs. It holds the ticket desk and the deterministic core, which holds
-/// every client and token and the advisor.
+/// The lifecycle handler the ServiceManager runs. It holds the ticket desk, the deterministic core, which holds
+/// every client and token and the advisor, and the stream to the Admiral, whose updates move the desk's tickets.
 pub struct SkipperHandler {
     desk: Arc<TicketDesk>,
     tickets: Arc<TicketsService>,
+    admiral: Arc<AdmiralChannel>,
+    outbox: std::sync::Mutex<Option<Outbox>>,
     // Read once the advisor tells a ticket's updates to its reporter (PROPOSALS.md) and by assisted configuration
     // (#6); no rpc reads it yet.
     #[allow(dead_code)]
@@ -129,7 +133,24 @@ pub struct SkipperHandler {
 impl SkipperHandler {
     pub fn new(core: Arc<Core>) -> Self {
         let desk = Arc::new(TicketDesk::default());
-        SkipperHandler { tickets: Arc::new(TicketsService::new(desk.clone())), desk, core }
+        let (admiral, outbox) = AdmiralChannel::new(desk.clone());
+        SkipperHandler {
+            tickets: Arc::new(TicketsService::new(desk.clone())),
+            desk,
+            admiral,
+            outbox: std::sync::Mutex::new(Some(outbox)),
+            core,
+        }
+    }
+
+    /// The Skipper's side of its stream to the Admiral.
+    pub fn admiral(&self) -> Arc<AdmiralChannel> {
+        self.admiral.clone()
+    }
+
+    /// What the channel sends outside an answer, for the one `AdmiralChannel::connect`: `None` once taken.
+    pub fn take_outbox(&self) -> Option<Outbox> {
+        self.outbox.lock().unwrap().take()
     }
 }
 
@@ -147,5 +168,9 @@ impl skipper_model::s2sm::handler::Handler for SkipperHandler {
 
     async fn shutdown(&self) {
         tracing::info!("skipper shutting down");
+        // A stream that was never connected has nobody to say goodbye to.
+        if self.outbox.lock().unwrap().is_none() {
+            self.admiral.goodbye().await;
+        }
     }
 }

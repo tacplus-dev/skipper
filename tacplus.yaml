@@ -7,8 +7,10 @@ language: rust
 pkg: com.github.tacplusdev.skipper
 output-dir: target/generated-sources
 # The advisor reaches its model only through llmproxy, over S2S (#5); its contract comes through the registry.
+# The Skipper's stream to its Admiral (#3): the Admiral's declared API (tacplus-dev/admiral#3), through the registry.
 depends:
   - llmproxy
+  - admiral
 src: proto
 header: |
   Copyright (c) 2026 Jody Scott

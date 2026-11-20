@@ -13,8 +13,8 @@ import "sys/spec.proto";
 // tenant, in that tenant's namespace (/tenants/<name>), with no privilege in
 // /system. The generated door refuses every caller outside its tenant.
 //
-// The ticket API (#2) is here; the stream to the Admiral (#3) and the rest come
-// in their own issues. Every rpc declares its route_field (the target tenant's
+// The ticket API (#2) is here; the stream to the Admiral (#3) is the client
+// below, and the rest come in their own issues. Every rpc declares its route_field (the target tenant's
 // tid), as a tenant-owned service must.
 // ---------------------------------------------------------------------------
 option (spec.service) = {name: "skipper", tenant_owned: true};
@@ -22,6 +22,12 @@ option (spec.service) = {name: "skipper", tenant_owned: true};
 // The advisor's model, through llmproxy (#5): the core holds this client and
 // gives the advisor only completions through it (src/core/llmproxy.rs).
 option (spec.grpc_s2s_client) = {service: "llmproxy.LlmProxy"};
+
+// The stream to the Admiral (#3, on tacplus-dev/admiral#3's API): the Skipper
+// dials out (tenant -> /system, the allowed direction) and holds one stream,
+// on which the Admiral's requests come back for the Skipper to decide
+// (src/core/admiral.rs).
+option (spec.grpc_s2s_client) = {service: "admiral.Admiral"};
 
 message Config {
   option (spec.grpc_config) = {service_name: "skipper"};

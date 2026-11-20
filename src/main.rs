@@ -40,5 +40,10 @@ async fn run() -> Result<(), Box<dyn Error>> {
     // The core holds the ServiceManager, and with it every client and token; its advisor reaches the model through
     // llmproxy (by default Opus) and gets nothing else (src/advisor, scripts/llm-rule-gate.sh).
     let core = Arc::new(Core::with_model(Arc::new(LlmProxyModel::new(sm.clone()))));
-    sm.run(Arc::new(service::SkipperHandler::new(core))).await
+    let handler = Arc::new(service::SkipperHandler::new(core));
+    // The one stream to the Admiral (#3): the generated client dials out and holds it, reconnecting after any end.
+    if let Some(outbox) = handler.take_outbox() {
+        handler.admiral().connect(&sm, outbox);
+    }
+    sm.run(handler).await
 }

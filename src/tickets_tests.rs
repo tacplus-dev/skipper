@@ -141,3 +141,48 @@ fn only_a_fix_deployed_or_a_close_is_final() {
         assert!(!tickets::is_final(state), "{state:?}");
     }
 }
+
+// The stream to the Admiral (#3): the Admiral's updates of a report the Skipper sent move the report's ticket on the
+// desk, forward only, as every other signal.
+#[test]
+fn the_admirals_updates_move_the_ticket() {
+    use std::sync::Arc;
+
+    use skipper::core::admiral::AdmiralChannel;
+    use skipper_model::types::services::admiral::admiral::{
+        admiral_message, AdmiralMessage, Classification, Report as AdmiralReport, ReportUpdate, Reproduction, Stage,
+        Symptom,
+    };
+
+    let desk = Arc::new(TicketDesk::default());
+    let id = desk.create(ALICE, report("checkout returns 500"), T0).unwrap().ticket_id;
+    let (channel, _outbox) = AdmiralChannel::new(desk.clone());
+    let sent = AdmiralReport {
+        report_id: id.clone(),
+        revision: 1,
+        summary: "checkout returns 500".to_string(),
+        symptom: Some(Symptom::default()),
+        reproduction: Some(Reproduction::default()),
+        classification: Some(Classification::default()),
+        ..Default::default()
+    };
+    channel.send_report("trace-1", sent).unwrap();
+    let update = |seq: u64, stage: Stage| AdmiralMessage {
+        body: Some(admiral_message::Body::Update(ReportUpdate {
+            report_id: id.clone(),
+            seq,
+            stage: stage as i32,
+            ..Default::default()
+        })),
+        ..Default::default()
+    };
+    channel.receive(update(1, Stage::Filed), T0 + 1);
+    channel.receive(update(2, Stage::FixDeployed), T0 + 2);
+    // Closed after the fix reached the deployment would move it back: the desk refuses, and the ticket stays.
+    channel.receive(update(3, Stage::Closed), T0 + 3);
+    let ticket = desk.get(ALICE, &id).unwrap();
+    assert_eq!(ticket.state(), TicketState::FixDeployed);
+    let states: Vec<TicketState> = ticket.history.iter().map(|e| e.state()).collect();
+    assert_eq!(states, vec![TicketState::Received, TicketState::Filed, TicketState::FixDeployed]);
+    assert_eq!(ticket.history[1].detail, "filed");
+}

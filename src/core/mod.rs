@@ -4,6 +4,7 @@
 //! is done with them (tacplus-dev/roadmap decisions/skipper-and-admiral-2026-11-01.md, 2026-11-19: an LLM may
 //! propose; it never holds a token or a write path).
 
+pub mod admiral;
 pub mod llmproxy;
 pub mod proposal;
 pub mod reads;
