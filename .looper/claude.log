@@ -1,0 +1,387 @@
+= init
+> Bash cd /builds/looper/skipper/issues/3; gh issue view 3 --repo tacplus-dev/skipper --comments | tail -40; gh issue view 1 --repo tacplus-dev/skipper --json state,title; gh issue view 3 --repo tacplus-dev/admiral --json state,title,closedAt; ls; cat STATE.md | head -80
+< association:	none edited:	false status:	none -- The looper of skipper starts this issue on `claude-opus-5-5`, the default model. Its limit 4h is capped at 4h by this job (https://gitlab.com/tacplus-dev/looper/-/jobs/18200954653), which ends sooner: the run stops by itself before then, its work check...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; cat tacplus.yaml tacplus.lock justfile; find src proto scripts -type f | xargs wc -l; cat Cargo.toml; cat PROPOSALS.md | head -60; git log --oneline | head -20
+< kind: service # The compiler line this repository builds with: tacplus's current line, 2.6. tacplus.lock pins its exact # release and build image by digest (`tacplus pin` moves it, in a commit; a build never does). tacplus: "2.6" language: rust # Rust takes only pkg's last segment: the crate is skip...
+> Bash gh issue view 3 --repo tacplus-dev/admiral --comments | tail -60; gh api repos/tacplus-dev/roadmap/contents/decisions/skipper-and-admiral-2026-11-01.md -H 'Accept: application/vnd.github.raw'
+< -- author:	tacplus-looper association:	none edited:	false status:	none -- The looper of admiral starts this issue on `claude-opus-5-5`, the default model. Its limit 4h is capped at 4h by this job (https://gitlab.com/tacplus-dev/looper/-/jobs/18212434627), which ends sooner: the run stops by itself b...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp; rm -rf adm && git clone -q https://github.com/tacplus-dev/admiral adm 2>&1 | tail -2; cd adm; git log --oneline | head -5; ls; cat tacplus.yaml; ls proto proto/*; wc -l proto/services/*.proto
+< 10d6246 HISTORY.md: #3 (looper) f1167c8 STATE.md: the Skipper-Admiral API (#3) ef803b3 PROPOSALS.md: the stream's wire test across builds, and TraceEvent's per-build rpc (#3) 6df6516 Declare the Skipper-Admiral API: the stream's typed messages (#3) d0decdc HISTORY.md: #1 (looper) Cargo.lock Cargo.to...
+> Bash cd /tmp/adm; cat proto/services/admiral.proto proto/registry.yaml proto/dependencies.yaml; cat src/service.rs | head -120; cat STATE.md README.md | head -120
+< // admiral: a deployment's platform agent, one per deployment, in /system. // // Design: tacplus-dev/roadmap decisions/skipper-and-admiral-2026-11-01.md (its 2026-11-19 addenda). // // SERVICE CLASS: a platform service, NOT tenant-owned: (spec.service) below leaves tenant_owned unset, so the // oper...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; cat src/main.rs src/lib.rs src/service.rs src/core/mod.rs src/core/llmproxy.rs proto/dependencies.yaml proto/registry.yaml; ls target 2>&1; ls ~ ~/.cargo 2>&1 | head
+< mod service; #[cfg(test)] mod service_tests; mod tickets; #[cfg(test)] mod tickets_tests;  use std::error::Error; use std::sync::Arc;  use skipper::core::llmproxy::LlmProxyModel; use skipper::core::Core; use skipper_model::s2sm::ServiceManager;  #[tokio::main] async fn main() {     // The chassis lo...
+Both blockers (#1, admiral#3) are closed, so this run builds the stream. Now I'm reading tacplus's generated S2S/rotating client API so the Skipper's side is written against the real generated code.
+> Bash cd /tmp; rm -rf tp && git clone -q --depth 50 --branch v2.6.13 https://github.com/tacplus-dev/tacplus tp 2>&1|tail -2; cd tp && git log --oneline -1; grep -rln "Rotating" --include=* . | grep -v '^./.git' | head -30
+< Turn off this advice by setting config variable advice.detachedHead to false  2ffaddd Rust cross-test fixtures keep the listener they bind (#531) (#538) ./docs/PENDING_DESIGN_DECISIONS.md Shell cwd was reset to /builds/looper/skipper/issues/3
+> Bash cd /tmp/tp; grep -n -B3 -A30 "Rotating" docs/PENDING_DESIGN_DECISIONS.md | head -80; gh issue view 322 --repo tacplus-dev/tacplus --json title,state,closedAt,body | head -c 3000; echo; gh release list --repo tacplus-dev/tacplus --limit 8
+< 92-   receives an identical key. That is a distribution problem: operator-generated 93-   and pushed through config, kernel-minted like other secrets, or supplied by 94-   the deployer as an opaque input. 95:2. **Can it rotate?** Rotating changes every surrogate. Previously emitted 96-   pseudonyms ...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; grep -rli "rotat" pkg/templates/rust | head -20; ls pkg/templates/rust
+< pkg/templates/rust/types/service_manager.rs.tmpl pkg/templates/rust/types/subscriber.rs.tmpl pkg/templates/rust/chassis/grpcserver/src/lib.rs.tmpl pkg/templates/rust/chassis/diskstore/src/fsutil.rs.tmpl pkg/templates/rust/chassis/diskstore/src/snapshot.rs.tmpl pkg/templates/rust/chassis/diskstore/sr...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; gh issue view 322 --repo tacplus-dev/tacplus --json state,closedAt,stateReason; gh issue view 322 --repo tacplus-dev/tacplus --comments | tail -30; grep -rn "Envelope\|session_id" pkg/templates/rust | head
+< {"closedAt":"2026-11-17T17:06:10Z","state":"CLOSED","stateReason":"COMPLETED"} association:	none edited:	false status:	none -- The looper of tacplus starts this issue on `claude-opus-5-5`, the default model. Its limit 4h is capped at 4h by this job (https://gitlab.com/tacplus-dev/looper/-/jobs/18115...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; gh api repos/tacplus-dev/tacplus/compare/765e0200...v2.6.13 --jq '.status, .ahead_by, .behind_by'; gh api repos/tacplus-dev/tacplus/commits/765e0200 --jq '.commit.committer.date'; ls pkg/templates/rust/chassis | head -50; ls proto/sys 2>/dev/null | head -40 || find . -name rotation.proto
+< diverged 23 62 2026-11-15T23:59:47Z am approval c2d client_im collection diskstore grpcconfig grpcserver healthreporter httpclient ip jwk key logger service_im servicemanager spiffe tags token x509 Shell cwd was reset to /builds/looper/skipper/issues/3
+= thinking_tokens
+= thinking_tokens
+> Bash gh api 'repos/tacplus-dev/tacplus/tags?per_page=30' --jq '.[].name' | sort -V | tail -8; gh api repos/tacplus-dev/tacplus/contents/STATE.md -H 'Accept: application/vnd.github.raw' | head -30
+< v2.6.6 v2.6.7 v2.6.8 v2.6.9 v2.6.10 v2.6.11 v2.6.12 v2.6.13 # State: tacplus  Overwritten to stay current (loopers and agents). Last updated: 2026-11-18 by looper (#340).  - **Version / line:** v2.6.13 (latest release, 2026-11-15, on `release/2.6`; v2.6.0 at 87adda9e, where `release/2.6` was cut); m...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; ls pkg/templates/rust/types; grep -rn "Streaming\|bidi\|client_stream\|ClientStream" pkg/templates/rust/types/*.tmpl | grep -i s2s | head -30
+< c2dm.rs.tmpl c2sm.rs.tmpl cargo.toml.tmpl constants.rs.tmpl defaults.rs.tmpl diskstore_stores.rs.tmpl enums.rs.tmpl enums_test.rs.tmpl extraction_helpers.rs.tmpl extraction_project.rs.tmpl grpcclient.rs.tmpl grpcclient_bidi.rs.tmpl handler.rs.tmpl helpers_header.rs.tmpl merge.rs.tmpl mod.rs.tmpl pro...
+> Bash cd /tmp/tp; cat pkg/templates/rust/types/grpcclient_bidi.rs.tmpl | head -150; grep -n "Bidi\|bidi\|streaming" pkg/templates/rust/types/grpcclient.rs.tmpl | head -30
+<     /// {{.MethodName}} opens a managed bidirectional stream to {{.ServiceName}}.{{.MethodName}}.     ///     /// Returns a handle for sending messages. Responses are delivered via     /// the on_message callback. The stream reconnects automatically on     /// transient failures. An on_connect callb...
+> Bash cd /tmp/tp; sed -n 150,400p pkg/templates/rust/types/grpcclient_bidi.rs.tmpl; grep -n "bidi\|HandleType" pkg/templates/rust/types/grpcclient.rs.tmpl | head -30
+<                                     sent += 1;                                 }                                 None => {                                     tracing::info!("{{.MethodName}}: handle dropped, shutting down");                                     return;                                ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; grep -rn "HandleType\|grpcclient_bidi" pkg --include=*.go | head -20; grep -n "Handle" pkg/templates/rust/types/grpcclient.rs.tmpl | head -30
+< pkg/internal/typescript/types/grpcclient_bidi_regression_test.go:16:// java (grpcclient_bidi_regression_test.go) and rust pkg/internal/typescript/types/grpcclient_bidi_regression_test.go:17:// (grpcclient_bidi_regression_test.go) already pin this; typescript did not, pkg/internal/typescript/types/bi...
+> Bash cd /tmp/tp; sed -n 520,720p pkg/internal/rust/types/grpcclient_gen.go
+< 	return fmt.Sprintf(`                                    if let Err(e) = %s.validate() {                                         errors += 1;                                         tracing::warn!(error = %%e, sent, received, errors, "response validation failed");                                    ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; grep -rn "fn s2s\|_client()\|pub mod clients\|grpc::clients" pkg/templates/rust/types/service_manager.rs.tmpl pkg/templates/rust/types/mod.rs.tmpl | head -20; grep -rn "clients/\|\"clients\"" pkg/internal/rust/types/*.go | grep -v _test | head -10
+< pkg/templates/rust/types/service_manager.rs.tmpl:57:pub use internal::grpc::clients::grpc_clients::TokenProvider; pkg/templates/rust/types/service_manager.rs.tmpl:58:use internal::grpc::clients::grpc_clients::TokenProviderFor; pkg/templates/rust/types/service_manager.rs.tmpl:59:use internal::grpc::c...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; cat ROADMAP.md; cat src/tickets.rs; sed -n 1,162p proto/services/skipper.proto; gh issue view 4 --repo tacplus-dev/skipper --json title,body,state | head -c 2500
+< # Roadmap: skipper  Owned by Jody; changed only by an agent at Jody's request. Loopers propose in PROPOSALS.md. Design: tacplus-dev/roadmap `decisions/skipper-and-admiral-2026-11-01.md`.  ## Now - Scaffold Skipper as a tacplus Rust service, tenant-scope, pinned in tacplus.lock, gates green (#1). Hub...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /tmp/tp; grep -n -i "field 200\|trace_id" docs/USER.md | head -20; gh api repos/tacplus-dev/tacplus/contents/pkg/templates/rust/types/grpcclient_bidi.rs.tmpl -H 'Accept: application/vnd.github.raw' > /tmp/bidi_main.tmpl; diff <(cat pkg/templates/rust/types/grpcclient_bidi.rs.tmpl) /tmp/bidi_main....
+< 583:  are identifiers and are kept); the injected `trace_id` is never redacted; 1555:    `(spec.store_namespace)`, and the injected `trace_id`/`noop` pair — and a 2113:A trace follows one piece of work through the fleet in the `trace_id` field 2114:(field 200). The rules (`tacplus-dev/roadmap:decisi...
+> Bash cd /tmp/tp; sed -n 2110,2180p docs/USER.md; gh api repos/tacplus-dev/tacplus/contents/docs/USER.md -H 'Accept: application/vnd.github.raw' | grep -n -i -A25 "make-before-break\|Rotating" | head -80
+< ## Distributed Tracing  A trace follows one piece of work through the fleet in the `trace_id` field (field 200). The rules (`tacplus-dev/roadmap:decisions/trace-propagation-2026-11-03.md`, #313):  - the field is on the message itself; - your code copies it onto every message its work causes; - tacpl...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; sed -n 1,125p scripts/llm-rule-gate.sh; sed -n 1,80p src/service_tests.rs; cat README.md | sed -n 1,200p | grep -n "" | sed -n 1,120p
+< #!/usr/bin/env bash # Copyright (c) 2026 Jody Scott # SPDX-License-Identifier: Apache-2.0  # The LLM-rule gate (#5; tacplus-dev/roadmap decisions/skipper-and-admiral-2026-11-01.md, 2026-11-19): an LLM may # propose; it never holds a token or a write path. The advisor's side of skipper is src/advisor...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash gh api repos/tacplus-dev/llmproxy/contents/proto/services --jq '.[].name'; gh api repos/tacplus-dev/llmproxy/contents/proto/services/llmproxy.proto -H 'Accept: application/vnd.github.raw' | grep -n "^package\|^service\|spec.service\b" | head
+< llmproxy.proto 59:package llmproxy; 64:option (spec.service) = {name: "llmproxy"}; 425:service LlmProxy {
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; git show 6767f39 --stat | cat; git show 6767f39 -- tacplus.yaml proto/ Cargo.toml | cat | head -80
+< commit 6767f39f47db9287b9082eb8166df8505737e9c7 Author: jodydadescott <jody@thescottsweb.com> Date:   Fri Nov 20 07:18:48 2026 +0000      The LLM advisor (read-only tools plus propose) and the gate that keeps it from any token or write path (#5)          The platform-wide rule (tacplus-dev/roadmap d...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; /usr/local/bin/looper-scan baseline /builds/tacplus-dev/looper/looper-runs/20261120T081924Z-issue-3/security/findings.json > /tmp/security-baseline.json; head -c 600 /builds/tacplus-dev/looper/looper-runs/20261120T081924Z-issue-3/security/summary.md; git check-ign...
+< ## Security checks: skipper 3aaa1465e7621e34cdc4ba72c4050ab24094bc9a (build)  6 finding(s): 0 failing the policy, 0 new since the previous run, 0 baselined (security-baseline.json), 0 accepted by an exception.  ### Not counted: the generated tree (target/generated-sources/model/) 7 SAST finding(s) a...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Write /builds/looper/skipper/issues/3/src/core/admiral.rs
+< File created successfully at: /builds/looper/skipper/issues/3/src/core/admiral.rs (file state is current in your context — no need to Read it back)
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Edit /builds/looper/skipper/issues/3/src/core/admiral.rs
+< The file /builds/looper/skipper/issues/3/src/core/admiral.rs has been updated successfully. (file state is current in your context — no need to Read it back)
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; python3 - <<'EOF' import re p='proto/services/skipper.proto'; s=open(p).read() s=s.replace('''option (spec.grpc_s2s_client) = {service: "llmproxy.LlmProxy"}; ''','''option (spec.grpc_s2s_client) = {service: "llmproxy.LlmProxy"};  // The stream to the Admiral (#3, ...
+<  proto/services/skipper.proto | 10 ++++++++--  src/core/mod.rs              |  1 +  tacplus.yaml                 |  2 ++  3 files changed, 11 insertions(+), 2 deletions(-) 123:| `depends` | list | No | Services this one calls, by registry name: `llmproxy` or `weather@1.2` (MAJOR.MINOR, the latest pa...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; python3 - <<'EOF' p='src/tickets.rs'; s=open(p).read() s=s.replace('''    #[cfg_attr(not(test), allow(dead_code))]     pub fn advance''','''    pub fn advance''') s=s.replace('''/// Whether `state` is a ticket's last''','''/// The Admiral's signals, from its updat...
+< src/main.rs:46:        handler.admiral().connect(&sm, outbox); src/service.rs:18:use skipper::core::admiral::{AdmiralChannel, Outbox}; src/service.rs:125:    admiral: Arc<AdmiralChannel>, src/service.rs:136:        let (admiral, outbox) = AdmiralChannel::new(desk.clone()); src/service.rs:140:       ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; python3 - <<'EOF' p='src/service.rs'; s=open(p).read() s=s.replace('''        tracing::info!("skipper shutting down");         self.admiral.goodbye().await;''','''        tracing::info!("skipper shutting down");         // A stream that was never connected has nob...
+< use skipper_model::types::services::skipper::TicketState;  use crate::tickets::{self, DeskError, Report, TicketDesk};  const ALICE: &str = "spiffe://example.com/tenants/acme/users/alice"; const BOB: &str = "spiffe://example.com/tenants/acme/users/bob"; const MINUTE_MS: i64 = 60 * 1000; const T0: i64...
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; cat >> src/tickets_tests.rs <<'EOF'  // The stream to the Admiral (#3): the Admiral's updates of a report the Skipper sent move the report's ticket on the // desk, forward only, as every other signal. #[test] fn the_admirals_updates_move_the_ticket() {     use std...
+< looper-trace: /builds/looper/skipper/issues/3 handler src/core/admiral.rs:259 connect (inbound: outbox)   causal src/core/admiral.rs:263 broker_skipper_channel: DROPS the inbound trace_id seam src/core/llmproxy.rs:27 generate_completion_as_service (trace: trace_id)   causal src/core/llmproxy.rs:36 g...
+= thinking_tokens
+= thinking_tokens
+> Edit /builds/looper/skipper/issues/3/src/core/admiral.rs
+< The file /builds/looper/skipper/issues/3/src/core/admiral.rs has been updated successfully. (file state is current in your context — no need to Read it back)
+> Bash cd /builds/looper/skipper/issues/3; /usr/local/bin/looper-trace check 2>&1 | tail -8
+< looper-trace: /builds/looper/skipper/issues/3 handler src/core/admiral.rs:259 connect (inbound: outbox)   unrelated src/core/admiral.rs:265 broker_skipper_channel: opening the stream is the Skipper's own lifecycle; each message on it carries the trace of seam src/core/llmproxy.rs:27 generate_complet...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+Code is in place; the trace check passes and so does the LLM-rule gate. Committing and starting the build job, since I can't compile locally.
+> Bash cd /builds/looper/skipper/issues/3; git add -A; git status --short; git commit -q -F - <<'EOF' The Skipper's stream to its Admiral, typed both ways on the Admiral's API (#3)  The Skipper dials out to its Admiral (tenant to /system, the allowed direction) and holds one stream, admiral.Admiral/BrokerS...
+< M  proto/services/skipper.proto A  src/core/admiral.rs M  src/core/mod.rs M  src/main.rs M  src/service.rs M  src/tickets.rs M  src/tickets_tests.rs M  tacplus.yaml 9549eb0 The Skipper's stream to its Admiral, typed both ways on the Admiral's API (#3) pid 1933
+While the build runs, I'll write the README section and PROPOSALS, and look for what tracks tacplus 2.7's release (the rotation).
+> Bash gh issue list --repo tacplus-dev/tacplus --search "2.7 release in:title" --state open --limit 10; gh issue view 259 --repo tacplus-dev/tacplus --json state,title; gh api repos/tacplus-dev/tacplus/contents/ROADMAP.md -H 'Accept: application/vnd.github.raw' | grep -n -i "2\.7\|release" | head -20
+< {"state":"OPEN","title":"Long-lived streams survive token expiry by make-before-break rotation; the member port moves onto gRPC"} 7:Latest release: v2.4.1 (2026-10-27). 2.4 is the line with the global registry and the version floor (#161). 8:Release lines with branches: 2.0 through 2.4. 13:- Formal ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash gh issue view 259 --repo tacplus-dev/tacplus --comments | tail -25
+< - **#322** (b): generated S2S rotation in the Go, Java and Rust chassis, with the `<Svc>Rotating` sibling, `last`, session binding and no cursor. `feature`, `approved`, `priority:high`. Since #236/#237 were closed as superseded by #259, the Go and Rust member ports are in this one: they port #321's ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cat /tmp/build1.log | tail -5
+< [2026-11-20T08:26:02Z] checkpoint of #3 (a build) pushed to looper/skipper-3:  10 files changed, 1139 insertions(+), 8 deletions(-) [2026-11-20T08:26:02Z] build requested: skipper 9549eb0, the gates full (no gates.yaml) the build job https://gitlab.com/tacplus-dev/build/-/pipelines/3093072539 of ski...
+Build is running. Meanwhile, the README section:
+> Edit /builds/looper/skipper/issues/3/README.md
+< The file /builds/looper/skipper/issues/3/README.md has been updated successfully.
+> Bash cd /builds/looper/skipper/issues/3; tail -25 PROPOSALS.md
+< ## From #5 (the LLM advisor and the LLM-rule gate), 2026-11-20  - **The advisor's model in skipper's Config**: a `Config.advisor_model_alias` (default `claude-opus-latest`, empty for   no model), so a deployment can run the core with no model, or point the advisor at another llmproxy alias (Fable   ...
+> Bash cd /builds/looper/skipper/issues/3; cat >> PROPOSALS.md <<'EOF'  ## From #3 (the stream to the Admiral), 2026-11-20  - **Pin tacplus 2.7 for make-before-break rotation.** The stream's rotation (tacplus-dev/tacplus#259, its Rust part   #322) is on tacplus main, in no release yet: 2.6.13, the pin, has...
+< [2026-11-20T08:26:02Z] checkpoint of #3 (a build) pushed to looper/skipper-3:  10 files changed, 1139 insertions(+), 8 deletions(-) [2026-11-20T08:26:02Z] build requested: skipper 9549eb0, the gates full (no gates.yaml) the build job https://gitlab.com/tacplus-dev/build/-/pipelines/3093072539 of ski...
+= thinking_tokens
+= thinking_tokens
+> ToolSearch {"query":"select:Monitor","max_results":1}
+< 
+> Bash until ! kill -0 1933 2>/dev/null; do sleep 15; done; tail -40 /tmp/build1.log
+= background_tasks_changed
+= task_started
+< Command running in background with ID: bedqcdz94. Output is being written to: /builds/looper/skipper/homes/looper-3/tmp/claude-61000/-builds-looper-skipper-issues-3/3de85ffa-6109-42a7-aef4-6c1bae42acde/tasks/bedqcdz94.output. You will be notified when it completes. To check interim output, use Read ...
+Waiting for the build verdict on 9549eb0. README and PROPOSALS are written and stay uncommitted until the build passes.
+> Bash until ! kill -0 1933 2>/dev/null; do sleep 20; done; tail -40 /tmp/build1.log
+= task_started
+= task_updated
+= task_notification
+= background_tasks_changed
+= task_notification
+< [2026-11-20T08:26:02Z] checkpoint of #3 (a build) pushed to looper/skipper-3:  10 files changed, 1139 insertions(+), 8 deletions(-) [2026-11-20T08:26:02Z] build requested: skipper 9549eb0, the gates full (no gates.yaml) the build job https://gitlab.com/tacplus-dev/build/-/pipelines/3093072539 of ski...
+It compiled; one binary test failed. Fetching the job log to see which one.
+> Bash ls /builds/tacplus-dev/looper/looper-runs/20261120T081924Z-issue-3/ 2>&1; which glab; curl -s "https://gitlab.com/api/v4/projects/tacplus-dev%2Fbuild/pipelines/3093072539/jobs" | python3 -c 'import sys,json;[print(j["id"],j["name"],j["status"]) for j in json.load(sys.stdin)]'
+< Exit code 1 builds builds.log claude.log comments model prompt.md security start-tree /usr/local/bin/glab Traceback (most recent call last):   File "<string>", line 1, in <module>     import sys,json;[print(j["id"],j["name"],j["status"]) for j in json.load(sys.stdin)]                            ~^^^...
+> Bash cd /builds/tacplus-dev/looper/looper-runs/20261120T081924Z-issue-3/; ls builds; tail -5 builds.log; f=$(ls -t builds/* | head -1); echo $f; ls -la $f
+< 20261120T082602Z-832120220.started 20261120T082602Z-832120220.taken 20261120T082602Z-832120220.wait [2026-11-20T08:26:03Z] GitLab refused the build of 9549eb0 with the input report (curl: (22) The requested URL returned error: 422 {"message":{"base":["`.gitlab-ci.yml`: unknown input arguments: repor...
+> Bash glab api "projects/tacplus-dev%2Fbuild/pipelines/3093072539/jobs" 2>&1 | python3 -c 'import sys,json;d=json.load(sys.stdin);[print(j["id"],j["name"],j["status"]) for j in d]' 2>&1 | head
+< Traceback (most recent call last):   File "<string>", line 1, in <module>     import sys,json;d=json.load(sys.stdin);[print(j["id"],j["name"],j["status"]) for j in d]                       ~~~~~~~~~^^^^^^^^^^^   File "/usr/lib/python3.13/json/__init__.py", line 293, in load     return loads(fp.read(...
+> Bash glab api "projects/tacplus-dev%2Fbuild/pipelines/3093072539/jobs" 2>&1 | head -c 400; echo; /usr/local/bin/repo-looper --help 2>&1 | grep -i -E "log|build" | head
+< {"message":"404 Project Not Found"}glab: 404 Project Not Found (HTTP 404)                                        one build a batch (the merge train, looper#86), while the repository   repo-looper --repo NAME --issue N --build   a build job of the report's committed HEAD, in the build for, or run, a ...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+No access to the job log, so I'll find the failing binary test by reading what the change could break.
+> Bash cd /builds/looper/skipper/issues/3; grep -n "llmproxy\|s2s\|registry\|fn \|depend" src/service_tests.rs | sed -n 1,80p
+< 9:use skipper_model::s2sm::handler::Handler; 10:use skipper_model::s2sm::internal::grpc::servers::services::skipper::tickets::{ 26:fn handler() -> SkipperHandler { 30:// The generated registry of this build: what tacplus made of proto/. 31:const REGISTRY: &str = include_str!("../target/generated-sou...
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; python3 - <<'EOF' p='src/tickets_tests.rs'; s=open(p).read() s=s.replace('''    channel.receive(update(1, Stage::Filed), T0 + 1);     channel.receive(update(2, Stage::FixDeployed), T0 + 2);     // Closed after the fix reached the deployment would move it back: the...
+<  PROPOSALS.md         | 21 +++++++++++++++++++++  README.md            | 22 ++++++++++++++++++++++  src/tickets_tests.rs |  4 ++--  3 files changed, 45 insertions(+), 2 deletions(-)
+= thinking_tokens
+= thinking_tokens
+> Bash cd /builds/looper/skipper/issues/3; git add src/tickets_tests.rs; git commit -q -m "tickets_tests: a backward update of the Admiral's is refused, not a close after the fix (#3)  CLOSED follows FIX_DEPLOYED in TicketState's order, so the desk takes it; the test now sends a FIX_LANDED after FIX_DEPLOY...
+< 42eed8c README: the stream to the Admiral; PROPOSALS: what #3 leaves (#3) a9db744 tickets_tests: a backward update of the Admiral's is refused, not a close after the fix (#3) 9549eb0 The Skipper's stream to its Admiral, typed both ways on the Admiral's API (#3) 3143
+> Bash until ! kill -0 3143 2>/dev/null; do sleep 20; done; tail -4 /tmp/build2.log
+= task_started
+= task_notification
+< [2026-11-20T08:31:07Z] build requested: skipper 42eed8c, the gates full (no gates.yaml) the build job https://gitlab.com/tacplus-dev/build/-/pipelines/3093087927 of skipper 42eed8c, the gates full on base dbf6cc1 verdict: success: pass: gates full on base dbf6cc178cb5b8e865569ec4a078ce8aa051bc33 bui...
+Green. Last step: STATE.md in its own commit, then queue the land.
+> Bash cd /builds/looper/skipper/issues/3; python3 - <<'EOF' p='STATE.md'; s=open(p).read() s=s.replace("Last updated: 2026-11-20 by the looper (#5, the LLM advisor and the LLM-rule gate).","Last updated: 2026-11-20 by the looper (#3, the stream to the Admiral).") s=s.replace("""  client, a token or a writ...
+= task_started
+= task_notification
+<  STATE.md | 15 +++++++++++----  1 file changed, 11 insertions(+), 4 deletions(-) [2026-11-20T08:37:00Z] checkpoint of #3 (land queued) pushed to looper/skipper-3:  14 files changed, 1282 insertions(+), 12 deletions(-) [2026-11-20T08:37:02Z] queued: the manager of skipper lands looper/skipper-3 in it...
+> Bash cd /builds/looper/skipper/issues/3; git log --oneline -4 | cat; /usr/local/bin/repo-looper --repo skipper --issue 3 --checkpoint "Land queued: 9549eb0 (the stream: src/core/admiral.rs, depends admiral, wired into the handler, the desk and main), a9db744 (test fix), 42eed8c (README, PROPOSALS), plus ...
+< 2336e6c STATE.md: the stream to the Admiral works; rotation waits for the 2.7 pin (#3) 42eed8c README: the stream to the Admiral; PROPOSALS: what #3 leaves (#3) a9db744 tickets_tests: a backward update of the Admiral's is refused, not a close after the fix (#3) 9549eb0 The Skipper's stream to its Ad...
+The Skipper now dials out and holds its stream to the Admiral, with typed messages both ways. The build passed (full gates on 42eed8c) and the land is queued with the manager. Make-before-break token rotation is not active yet: it isn't in any released tacplus, and skipper pins 2.6.13.
+
+**Rotation:** it lives in tacplus's generated client and is merged on tacplus main (tacplus#322), but no release has it yet. Skipper needs no code change for it. Turning it on means pinning tacplus 2.7 in both skipper and the Admiral, then checking on a deploy that the stream outlives a token. Until then the Admiral ends the stream when each token expires, and the Skipper reconnects and picks up where it left off.
+
+**Commits:**
+- **9549eb0** adds the stream (`src/core/admiral.rs`, plus `depends: admiral` and the client declaration):
+  - Each time the stream opens, the Skipper says hello, names the reports it still follows and the last update it holds for each, and resends any report version the Admiral hasn't confirmed yet. A report the Admiral says it doesn't know is sent again.
+  - The Admiral's updates move the report's ticket to filed, fix landed, fix deployed or closed. Each update applies once, however often it's replayed, and a ticket only moves forward.
+  - The Skipper decides each Admiral request itself. It answers only for reports it sent, and for now declines both kinds with the reason: it can't read the tenant's config until #6, or re-run a reproduction until #4.
+  - On shutdown it sends a final goodbye message (`last`).
+- **a9db744** fixes a test of mine that expected the wrong ticket order. It's why the first build of 9549eb0 failed.
+- **42eed8c** updates the README and PROPOSALS.md.
+- **2336e6c** updates STATE.md.
+
+**Trace propagation:** the trace check passes (2 handlers, 0 findings). An answer carries the Admiral request's `trace_id`, and a report carries the trace of the work that sent it, on every resend too. The test `each_message_carries_the_trace_of_what_caused_it` asserts both. Opening the stream, the hello and the goodbye aren't caused by any request, and the code says so at each spot.
+
+**Not verified:**
+- **Against a live Admiral:** it still refuses every stream until its intake (admiral#2) lands.
+- **Retry timing:** tacplus's generated client retries every 5 seconds, a fixed interval rather than the growing backoff the design asks for. That's a change for tacplus's generator, not for code here.
+- **Reports actually flowing:** nothing sends one to the Admiral until validation (#4) does, so tickets stay at "received" until then.
+
+These, the 2.7 pin, and the fact that the stream's state is held only in memory are written up in PROPOSALS.md.
+
+**Decision for the next run:** close #3 after the manager's verdict with the 2.7 pin as a follow-up, or keep it open until tacplus 2.7 is released. My last checkpoint records this choice.
+= success: The Skipper now dials out and holds its stream to the Admiral, with typed messages both ways. The build passed (full gates on 42eed8c) and the land is queued with the manager. Make-before-break token rotation is not active yet: it isn't in any released tacplus, and skipper pins 2.6.13.
+
+**Rotation:** it lives in tacplus's generated client and is merged on tacplus main (tacplus#322), but no release has it yet. Skipper needs no code change for it. Turning it on means pinning tacplus 2.7 in both skipper and the Admiral, then checking on a deploy that the stream outlives a token. Until then the Admiral ends the stream when each token expires, and the Skipper reconnects and picks up where it left off.
+
+**Commits:**
+- **9549eb0** adds the stream (`src/core/admiral.rs`, plus `depends: admiral` and the client declaration):
+  - Each time the stream opens, the Skipper says hello, names the reports it still follows and the last update it holds for each, and resends any report version the Admiral hasn't confirmed yet. A report the Admiral says it doesn't know is sent again.
+  - The Admiral's updates move the report's ticket to filed, fix landed, fix deployed or closed. Each update applies once, however often it's replayed, and a ticket only moves forward.
+  - The Skipper decides each Admiral request itself. It answers only for reports it sent, and for now declines both kinds with the reason: it can't read the tenant's config until #6, or re-run a reproduction until #4.
+  - On shutdown it sends a final goodbye message (`last`).
+- **a9db744** fixes a test of mine that expected the wrong ticket order. It's why the first build of 9549eb0 failed.
+- **42eed8c** updates the README and PROPOSALS.md.
+- **2336e6c** updates STATE.md.
+
+**Trace propagation:** the trace check passes (2 handlers, 0 findings). An answer carries the Admiral request's `trace_id`, and a report carries the trace of the work that sent it, on every resend too. The test `each_message_carries_the_trace_of_what_caused_it` asserts both. Opening the stream, the hello and the goodbye aren't caused by any request, and the code says so at each spot.
+
+**Not verified:**
+- **Against a live Admiral:** it still refuses every stream until its intake (admiral#2) lands.
+- **Retry timing:** tacplus's generated client retries every 5 seconds, a fixed interval rather than the growing backoff the design asks for. That's a change for tacplus's generator, not for code here.
+- **Reports actually flowing:** nothing sends one to the Admiral until validation (#4) does, so tickets stay at "received" until then.
+
+These, the 2.7 pin, and the fact that the stream's state is held only in memory are written up in PROPOSALS.md.
+
+**Decision for the next run:** close #3 after the manager's verdict with the 2.7 pin as a follow-up, or keep it open until tacplus 2.7 is released. My last checkpoint records this choice.
+= usage: {"claude-opus-5-5":{"inputTokens":102,"outputTokens":44958,"cacheReadInputTokens":5538400,"cacheCreationInputTokens":146566,"webSearchRequests":0,"costUSD":3.179776000000001,"contextWindow":1000000,"maxOutputTokens":128000,"thinkingTokens":16089,"canonicalModel":"claude-opus-5-5","provider":"firstParty","costBasis":"list"}}
